@@ -10,7 +10,7 @@ import math
 train_path = '../data/train.csv'
 test_path = '../data/test.csv'
 sample_path = '../data/sampleSubmission.csv'
-output_path = 'submission_rf.csv'
+output_path = 'submission_gbt.csv'
 
 def get_category_dict():
     global sample_path
@@ -111,7 +111,7 @@ def get_feature(train_f, tag="training_set"):
 
 
     ## Feature of 'Address'
-
+    """
     # this one is better for random forests
     address_dict = dict()
     cnt = 0
@@ -122,8 +122,8 @@ def get_feature(train_f, tag="training_set"):
     # print district_dict
     
     train_f['Address'] = train_f['Address'].map(address_dict).astype(int)
-
     """
+
     if tag == "training_set":
         cnt = 0
         for address, cat in zip(train_f['Address'], train_f['Category']):
@@ -138,7 +138,7 @@ def get_feature(train_f, tag="training_set"):
     for addr in train_f['Address']:
         addr_feat[cnt, :] = addr
         cnt += 1
-    """
+
 
     ## Features of 'Time'
     # print train_f['Dates'].dt.year
@@ -175,13 +175,13 @@ def get_feature(train_f, tag="training_set"):
     else:
         raise ValueError("tag must be training_set or test_set")
 
-    X = train_f[['DayOfWeek', 'PdDistrict', 'Address', 'X', 'Y', 'Year', 'Month', 'Hour']].values  
+    # X = train_f[['DayOfWeek', 'PdDistrict', 'Address', 'X', 'Y', 'Year', 'Month', 'Hour']].values  
 
     # X = numpy.concatenate((train_f[['DayOfWeek', 'PdDistrict', 'X', 'Y', 'Year', 'Month', 'Hour']].values , addr_feat), axis=1)
 
-    #X = numpy.concatenate((train_f[['X', 'Y', 'Year', 'Month', 'Hour']].values , addr_feat), axis=1)
-    #X = numpy.concatenate((X, pd.get_dummies(train_f['PdDistrict']).values), axis=1)
-    #X = numpy.concatenate((X, pd.get_dummies(train_f['DayOfWeek']).values), axis=1)
+    X = numpy.concatenate((train_f[['X', 'Y', 'Year', 'Month', 'Hour']].values , addr_feat), axis=1)
+    X = numpy.concatenate((X, pd.get_dummies(train_f['PdDistrict']).values), axis=1)
+    X = numpy.concatenate((X, pd.get_dummies(train_f['DayOfWeek']).values), axis=1)
 
     return X, Y
 
@@ -206,8 +206,8 @@ def main():
     
 
     ### TRAINING
-    # clf = GradientBoostingClassifier(n_estimators=50)
-    clf = RandomForestClassifier(n_estimators=200)
+    clf = GradientBoostingClassifier(n_estimators=50)
+    # clf = RandomForestClassifier(n_estimators=2)
     # clf = LogisticRegression(n_jobs=4)
 
     X, Y = shuffle_XY(X, Y)
@@ -222,13 +222,15 @@ def main():
     clf = clf.fit(X_train, Y_train)
     print "Training done"
 
-    # train_acc = clf.score(X_train, Y_train)
-    # print "Train acc:", train_acc
     
     val_acc = clf.score(X_val, Y_val)
     print "Val acc:", val_acc
 
     val_pred = clf.predict_proba(X_val)
+    
+
+    # print max(Y_val), min(Y_val)
+    # print Y_val, Y_val + 1
     val_log = 0.0
     cnt = 0
     for y in Y_val:
@@ -236,10 +238,7 @@ def main():
         cnt += 1
     val_log =  - val_log / len(Y_val)
     print "Val log loss:", val_log
-
-    # print max(Y_val), min(Y_val)
-    # print Y_val, Y_val + 1
-
+ 
     # print "Val loss:", log_loss(Y_val+1, val_pred) # Note the +1 here!
     """
     # scores = cross_val_score(clf, X, Y)
